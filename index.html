@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2456A6">
+<title>Knowledge</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#FFFFFF; --surface:#F3F4F7; --ink:#18213A; --muted:#566079; --line:#DCE0E8;
+    --accent:#2456A6; --accent-soft:#EAF0FA; --mark:#FFF1B8; --ok:#2C7A4B; --danger:#A3261B;
+    --t-artigo:#2C7A4B; --t-ferramenta:#2456A6; --t-web:#A8641E; --t-nota:#7A8299; --t-projeto:#18213A;
+  }
+  * { box-sizing:border-box; }
+  html, body { height:100%; margin:0; }
+  body { background:var(--bg); color:var(--ink); font:15px/1.5 "Atkinson Hyperlegible", system-ui, sans-serif; }
+  a { color:var(--accent); }
+  button, input, select, textarea { font:inherit; color:inherit; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  [hidden] { display:none !important; }
+
+  #app { display:grid; grid-template-columns:210px 310px minmax(0,1fr); grid-template-rows:auto auto minmax(0,1fr); height:100vh; height:100dvh; }
+  .top { grid-column:1 / -1; display:flex; gap:12px; align-items:center; padding:10px 16px; border-bottom:1px solid var(--line); }
+  .logo { font-weight:700; font-size:17px; width:178px; color:var(--ink); text-decoration:none; }
+  #busca { flex:1; min-width:0; border:1.5px solid var(--line); border-radius:8px; padding:8px 12px; background:#fff; }
+  .btn { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:8px 14px; font-weight:700; text-decoration:none; cursor:pointer; white-space:nowrap; }
+  .ghost { background:#fff; border:1px solid var(--line); border-radius:8px; padding:7px 12px; cursor:pointer; text-decoration:none; color:var(--ink); white-space:nowrap; }
+
+  #nav { grid-row:2 / 4; background:var(--surface); border-right:1px solid var(--line); padding:12px 10px; overflow:auto; font-size:14px; }
+  .nav-h { font-size:12.5px; color:var(--muted); margin:16px 6px 4px; }
+  .nav-i { display:flex; width:100%; justify-content:space-between; align-items:center; gap:8px; padding:5px 6px; border:0; border-radius:6px; background:none; text-align:left; cursor:pointer; text-decoration:none; color:var(--ink); }
+  .nav-i:hover { background:#fff; }
+  .nav-i.cur { background:#fff; box-shadow:0 0 0 1px var(--line); font-weight:700; }
+  .nav-i small { color:var(--muted); font-weight:400; }
+  .dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; flex:none; }
+  .t-artigo { background:var(--t-artigo); } .t-ferramenta { background:var(--t-ferramenta); } .t-web { background:var(--t-web); } .t-nota { background:var(--t-nota); } .t-projeto { background:var(--t-projeto); }
+
+  #facets { grid-column:2 / 4; display:flex; gap:8px; padding:8px 16px; border-bottom:1px solid var(--line); flex-wrap:wrap; align-items:center; }
+  .facet { display:inline-flex; align-items:center; gap:4px; border:1px solid var(--line); border-radius:6px; padding:2px 4px 2px 10px; font-size:13.5px; background:#fff; }
+  .facet.on { border-color:var(--accent); color:var(--accent); }
+  .facet select { border:0; background:transparent; padding:3px 2px; max-width:180px; cursor:pointer; color:inherit; }
+  .limpar { border:0; background:none; color:var(--accent); cursor:pointer; font-size:13.5px; }
+
+  #lista { border-right:1px solid var(--line); overflow:auto; }
+  .cont { padding:8px 16px; font-size:12.5px; color:var(--muted); border-bottom:1px solid var(--line); }
+  .item { display:block; padding:11px 16px; border-bottom:1px solid var(--line); color:var(--ink); text-decoration:none; }
+  .item:hover { background:var(--surface); }
+  .item.cur { background:var(--accent-soft); box-shadow:inset 3px 0 0 var(--accent); }
+  .item b { display:block; line-height:1.3; }
+  .item small { color:var(--muted); display:flex; align-items:center; gap:4px; margin-top:3px; }
+  .unrev { background:var(--mark); border-radius:3px; padding:0 5px; font-size:12px; color:var(--ink); margin-left:auto; white-space:nowrap; }
+  .vazio { padding:28px 16px; color:var(--muted); }
+
+  #leitor { overflow:auto; padding:24px 32px 64px; }
+  .kind { font-weight:700; font-size:13.5px; }
+  h1 { font-size:26px; line-height:1.2; margin:6px 0 4px; letter-spacing:-.01em; max-width:34ch; }
+  .lead { color:var(--muted); margin:0 0 16px; font-size:16px; max-width:68ch; }
+  .acoes { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 16px; }
+  .revbar { display:flex; justify-content:space-between; align-items:center; gap:12px; background:var(--mark); border-radius:6px; padding:8px 12px; margin-bottom:16px; font-size:14px; }
+  .revbar button { border:0; background:none; color:var(--accent); font-weight:700; cursor:pointer; }
+  .alerta { background:#FDECEA; color:var(--danger); border-radius:6px; padding:8px 12px; margin-bottom:16px; }
+  .fields { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); border:1px solid var(--line); border-radius:8px; margin-bottom:16px; max-width:760px; }
+  .f { padding:9px 12px; border-right:1px solid var(--line); min-width:0; }
+  .f:last-child { border-right:0; }
+  .f span { display:block; font-size:12.5px; color:var(--muted); }
+  .f b, .f a { font-size:15px; font-weight:700; overflow-wrap:anywhere; }
+  .status { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-bottom:16px; }
+  .status button { border:0; border-right:1px solid var(--line); background:#fff; padding:6px 12px; cursor:pointer; }
+  .status button:last-child { border-right:0; }
+  .status button[aria-pressed="true"] { background:var(--ink); color:#fff; }
+  .tagrow { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px; }
+  .tg { display:inline-flex; align-items:center; gap:4px; font-size:13px; border:1px solid var(--line); border-radius:4px; padding:1px 8px; color:var(--ink); text-decoration:none; background:#fff; }
+  .tg.sub { background:var(--surface); }
+  .tg.proj { border-color:var(--accent); color:var(--accent); }
+  .tg button { border:0; background:none; padding:0 0 0 2px; cursor:pointer; color:var(--muted); }
+  .tg.add { color:var(--accent); border-style:dashed; cursor:pointer; }
+  .corpo { max-width:68ch; font-size:16.5px; line-height:1.65; }
+  .corpo h2 { font-size:15px; margin:22px 0 4px; }
+  .corpo pre { background:var(--surface); padding:12px; border-radius:6px; overflow:auto; font-size:13.5px; }
+  .corpo code { background:var(--surface); padding:1px 5px; border-radius:4px; font-size:.9em; }
+  .corpo pre code { padding:0; background:none; }
+  .corpo img { max-width:100%; }
+  .wl { text-decoration:none; border-bottom:1px solid currentColor; }
+  .wl.quebrado { color:var(--muted); border-bottom-style:dashed; }
+  .citada { margin-top:32px; max-width:68ch; border-top:1px solid var(--line); padding-top:12px; }
+  .citada h2 { font-size:14px; margin:0 0 6px; }
+  .citada a { display:block; padding:4px 0; }
+
+  form.painel { max-width:560px; display:grid; gap:12px; }
+  form.painel label { display:grid; gap:4px; font-size:14px; color:var(--muted); }
+  form.painel input, form.painel textarea, form.painel select { border:1.5px solid var(--line); border-radius:8px; padding:10px 12px; background:#fff; color:var(--ink); }
+  fieldset { border:0; padding:0; margin:0; display:flex; gap:6px; flex-wrap:wrap; }
+  legend { font-size:14px; color:var(--muted); margin-bottom:6px; }
+  .pilula input { position:absolute; opacity:0; }
+  .pilula span { display:inline-block; border:1px solid var(--line); border-radius:6px; padding:5px 11px; cursor:pointer; color:var(--ink); }
+  .pilula input:checked + span { border-color:var(--accent); color:var(--accent); font-weight:700; }
+  .pilula input:focus-visible + span { outline:2px solid var(--accent); outline-offset:2px; }
+  .hint { color:var(--muted); font-size:13.5px; margin:0; }
+  .editor textarea { width:100%; min-height:60vh; font:14px/1.55 ui-monospace, Consolas, monospace; border:1.5px solid var(--line); border-radius:8px; padding:12px; }
+  .ed-top { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+  .cap-item { border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:10px; max-width:680px; }
+  .cap-item.falhou { border-color:#F2C4BF; background:#FFF8F7; }
+  .cap-item p { margin:4px 0; overflow-wrap:anywhere; }
+
+  #aviso { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--ink); color:#fff; padding:10px 16px; border-radius:8px; max-width:min(92vw,520px); box-shadow:0 4px 16px rgba(24,33,58,.25); }
+  #aviso.erro { background:var(--danger); }
+  #aviso:empty { display:none; }
+  .demo-bar { position:fixed; top:0; left:50%; transform:translateX(-50%); z-index:5; background:var(--mark); font-size:13px; padding:3px 12px; border-radius:0 0 8px 8px; }
+  .tabbar { display:none; }
+
+  @media (max-width: 800px) {
+    #app { grid-template-columns:1fr; grid-template-rows:auto auto minmax(0,1fr) auto; }
+    .top { padding:8px 12px; gap:8px; }
+    .logo { width:auto; }
+    .top a.ghost, .top .btn { display:none; }
+    #nav, #facets, #lista, #leitor { grid-column:1; grid-row:3; border-right:0; }
+    #facets { grid-row:2; overflow-x:auto; flex-wrap:nowrap; }
+    body:not([data-vista="lista"]) #facets, body:not([data-vista="lista"]) #lista { display:none; }
+    body:not([data-vista="leitor"]) #leitor { display:none; }
+    body:not([data-vista="nav"]) #nav { display:none; }
+    #leitor { padding:18px 16px 40px; }
+    h1 { font-size:22px; }
+    .fields { grid-template-columns:1fr 1fr; }
+    .f:nth-child(2n) { border-right:0; }
+    .f:nth-child(-n+2) { border-bottom:1px solid var(--line); }
+    .tabbar { display:grid; grid-template-columns:repeat(4,1fr); grid-row:4; border-top:1px solid var(--line); background:var(--surface); padding-bottom:env(safe-area-inset-bottom); }
+    .tabbar a { text-align:center; padding:10px 0 12px; font-size:12.5px; color:var(--muted); text-decoration:none; }
+    .tabbar a.cur { color:var(--ink); font-weight:700; }
+    .tabbar a.cap { color:#fff; background:var(--accent); margin:6px; border-radius:8px; padding:6px 0; font-weight:700; }
+    #aviso { bottom:76px; }
+  }
+</style>
+</head>
+<body data-vista="lista">
+<div id="demo-bar" class="demo-bar" hidden>Modo exemplo: dados de demonstração, alterações não são salvas. <a href="#/ajustes">Conectar ao GitHub</a></div>
+<div id="app">
+  <header class="top">
+    <a class="logo" href="#/">Knowledge</a>
+    <input id="busca" type="search" placeholder="Buscar título, autor, tag, DOI…" aria-label="Buscar nas notas" autocomplete="off">
+    <button id="sync" class="ghost" type="button">Sincronizar</button>
+    <a class="ghost" href="#/nova">Nova nota</a>
+    <a class="btn" href="#/capturar">Capturar link</a>
+  </header>
+  <aside id="nav" aria-label="Navegação"></aside>
+  <div id="facets" aria-label="Filtros"></div>
+  <section id="lista" aria-label="Notas"></section>
+  <main id="leitor"></main>
+  <nav class="tabbar" aria-label="Seções">
+    <a href="#/" data-tab="lista">Biblioteca</a>
+    <a href="#/navegar" data-tab="nav">Navegar</a>
+    <a href="#/capturar" class="cap">Capturar</a>
+    <a href="#/inbox" data-tab="inbox">Inbox</a>
+  </nav>
+</div>
+<div id="aviso" role="status" aria-live="polite"></div>
+
+<script type="module">
+import DOMPurify from './vendor/purify.es.mjs';
+import {
+  TIPOS, PASTAS, esc, asList, parseNote, serializeNote, applyFilters, sortNotes, facetValues,
+  backlinks, renderBody, fieldsFor, firstUrl, captureFile, newNote,
+} from './core.js';
+import {
+  getConfig, setConfig, esquecerTudo, testarConexao, carregarCache, sincronizar, salvar, remover,
+  capturar, enviarFila, tamanhoFila,
+} from './store.js';
+
+const $ = (s) => document.querySelector(s);
+const enc = encodeURIComponent;
+const seguro = (u) => (/^https?:\/\//i.test(String(u || '')) ? String(u) : null); // bloqueia javascript: e afins vindos do frontmatter
+const AREAS_PADRAO = ['Psicologia clínica', 'Tecnologia & IA', 'Produtividade & Gestão'];
+const CAMPOS = {
+  artigo: [['foco', 'Foco'], ['desenho', 'Desenho'], ['abordagem', 'Abordagem']],
+  ferramenta: [['status', 'Status'], ['relevancia', 'Relevância'], ['categoria', 'Categoria']],
+  web: [['plataforma', 'Plataforma']],
+};
+const STATUS_FERR = [['quero-testar', 'Quero testar'], ['instalado', 'Instalado'], ['descartado', 'Descartado']];
+
+let cache = {};        // path -> { sha, text }
+let notas = [];        // notas parseadas (sem inbox)
+let inbox = [];        // capturas parseadas
+let demo = false;
+let compartilhado = null;
+const F = { q: '', tipo: '', area: '', projeto: '', revisao: '', campos: {} };
+
+// ---------- estado ----------
+function rebuild() {
+  const todas = Object.entries(cache).map(([p, v]) => parseNote(p, v.text));
+  notas = sortNotes(todas.filter((n) => !n.path.startsWith('inbox/')));
+  inbox = todas.filter((n) => n.path.startsWith('inbox/')).sort((a, b) => b.path.localeCompare(a.path));
+}
+const biblioteca = () => notas.filter((n) => n.meta.tipo !== 'projeto');
+const projetos = () => notas.filter((n) => n.meta.tipo === 'projeto');
+const porPath = (p) => notas.find((n) => n.path === p) || inbox.find((n) => n.path === p);
+const nomeProjeto = (slug) => projetos().find((p) => p.slug === slug)?.meta.titulo || slug;
+const areas = () => [...new Set([...AREAS_PADRAO, ...facetValues(biblioteca(), 'area').map(([v]) => v)])];
+
+let avisoT;
+function aviso(msg, erro = false) {
+  const el = $('#aviso');
+  el.textContent = msg;
+  el.classList.toggle('erro', erro);
+  clearTimeout(avisoT);
+  avisoT = setTimeout(() => { el.textContent = ''; }, erro ? 7000 : 3500);
+}
+
+async function gravar(path, text, msg) {
+  if (demo) { cache[path] = { sha: 'demo', text }; rebuild(); render(); aviso('Modo exemplo: alteração só nesta tela.'); return true; }
+  try {
+    const sha = await salvar(path, text, cache[path]?.sha, msg);
+    cache[path] = { sha, text };
+    rebuild(); render(); aviso('Salvo.');
+    return true;
+  } catch (e) { aviso(e.message, true); return false; }
+}
+
+// ---------- navegação lateral ----------
+function navItem(rot, n, k, v, extra = '') {
+  const ativo = k && (k === 'tudo' ? !F.tipo && !F.area && !F.projeto && !F.revisao : F[k] === v);
+  return `<button type="button" class="nav-i${ativo ? ' cur' : ''}" data-k="${k}" data-v="${esc(v)}"><span>${extra}${esc(rot)}</span><small>${n}</small></button>`;
+}
+function renderNav() {
+  const lib = biblioteca();
+  const pendInbox = inbox.filter((n) => !n.meta.falha).length;
+  const falhas = inbox.length - pendInbox;
+  $('#nav').innerHTML = `
+    <a class="nav-i" href="#/inbox"><span>Inbox</span><small>${pendInbox}${falhas ? `, ${falhas} com problema` : ''}</small></a>
+    ${navItem('Para revisar', lib.filter((n) => n.meta.revisado === false).length, 'revisao', 'pendente')}
+    ${navItem('Tudo', lib.length, 'tudo', '')}
+    <div class="nav-h">Áreas</div>
+    ${facetValues(lib, 'area').map(([v, n]) => navItem(v, n, 'area', v)).join('')}
+    <div class="nav-h">Projetos</div>
+    ${projetos().map((p) => navItem(p.meta.titulo || p.slug, lib.filter((n) => asList(n.meta.projetos).includes(p.slug)).length, 'projeto', p.slug)).join('') || '<p class="hint" style="padding:0 6px">Use @nome-do-projeto numa captura para criar um.</p>'}
+    <div class="nav-h">Tipos</div>
+    ${['artigo', 'ferramenta', 'web', 'nota'].map((t) => navItem(TIPOS[t], lib.filter((n) => n.meta.tipo === t).length, 'tipo', t, `<span class="dot t-${t}"></span>`)).join('')}
+    <div class="nav-h">App</div>
+    <a class="nav-i" href="#/nova"><span>Nova nota</span></a>
+    <a class="nav-i" href="#/ajustes"><span>Ajustes</span></a>`;
+}
+
+// ---------- facetas ----------
+function select(rot, k, valores, atual) {
+  return `<label class="facet${atual ? ' on' : ''}"><span>${esc(rot)}:</span><select data-k="${k}">
+    <option value="">todos</option>${valores.map(([v, n]) => `<option value="${esc(v)}"${v === atual ? ' selected' : ''}>${esc(v)} (${n})</option>`).join('')}
+  </select></label>`;
+}
+function renderFacets() {
+  const lib = biblioteca();
+  const tipos = ['artigo', 'ferramenta', 'web', 'nota'].map((t) => [t, lib.filter((n) => n.meta.tipo === t).length]).filter(([, n]) => n);
+  const doTipo = F.tipo ? lib.filter((n) => n.meta.tipo === F.tipo) : [];
+  const campos = (CAMPOS[F.tipo] || []).map(([k, rot]) => select(rot, `campo:${k}`, facetValues(doTipo, k), F.campos[k] || '')).join('');
+  const algum = F.tipo || F.area || F.projeto || F.revisao || F.q || Object.values(F.campos).some(Boolean);
+  $('#facets').innerHTML =
+    select('Tipo', 'tipo', tipos.map(([t, n]) => [t, n]), F.tipo).replace(/>(artigo|ferramenta|web|nota) \(/g, (_, t) => `>${TIPOS[t]} (`) +
+    select('Área', 'area', facetValues(lib, 'area'), F.area) +
+    select('Projeto', 'projeto', facetValues(lib, 'projetos'), F.projeto) +
+    select('Revisão', 'revisao', [['pendente', lib.filter((n) => n.meta.revisado === false).length], ['revisada', lib.filter((n) => n.meta.revisado !== false).length]], F.revisao) +
+    campos + (algum ? '<button type="button" class="limpar" data-acao="limpar">Limpar filtros</button>' : '');
+}
+
+// ---------- lista ----------
+function subtitulo(n) {
+  const m = n.meta;
+  if (m.tipo === 'artigo') return `${esc(asList(m.autores)[0] || '')}${asList(m.autores).length > 1 ? ' et al.' : ''}${m.ano ? ', ' + esc(m.ano) : ''}`;
+  if (m.tipo === 'ferramenta') return esc([m.categoria, STATUS_FERR.find(([v]) => v === m.status)?.[1]].filter(Boolean).join(', '));
+  if (m.tipo === 'web') return esc([m.plataforma, m.autor].filter(Boolean).join(', '));
+  return esc(m.criado || '');
+}
+function renderLista(atual) {
+  const lib = biblioteca();
+  const lista = applyFilters(lib, F);
+  if (!lib.length) {
+    $('#lista').innerHTML = `<p class="vazio">Biblioteca vazia. <a href="#/capturar">Capture um link</a> ou <a href="#/nova">crie uma nota</a>.</p>`;
+    return;
+  }
+  $('#lista').innerHTML = `<div class="cont">${lista.length} de ${lib.length} notas</div>` + (lista.map((n) => `
+    <a class="item${n.path === atual ? ' cur' : ''}" href="#/n/${enc(n.path)}">
+      <b>${esc(n.meta.titulo || n.slug)}</b>
+      <small><span class="dot t-${esc(n.meta.tipo)}"></span>${subtitulo(n)}${n.meta.revisado === false ? '<span class="unrev">não revisada</span>' : ''}</small>
+    </a>`).join('') || '<p class="vazio">Nenhuma nota com esses filtros. <button type="button" class="limpar" data-acao="limpar">Limpar filtros</button></p>');
+}
+
+// ---------- leitor ----------
+function corpoSeguro(body) {
+  const html = DOMPurify.sanitize(renderBody(notas, body));
+  const t = document.createElement('template');
+  t.innerHTML = html;
+  t.content.querySelectorAll('a[href^="http"]').forEach((a) => { a.target = '_blank'; a.rel = 'noopener noreferrer'; });
+  return t.innerHTML;
+}
+function verNota(n) {
+  const m = n.meta;
+  const campos = fieldsFor(m).filter(([, v]) => v != null && v !== '');
+  const refs = backlinks(notas, n);
+  $('#leitor').innerHTML = `
+    <div class="kind" style="color:var(--t-${esc(m.tipo || 'nota')})">${esc(TIPOS[m.tipo] || 'Nota')}</div>
+    <h1>${esc(m.titulo || n.slug)}</h1>
+    ${m.titulo_pt || m.descricao ? `<p class="lead">${esc(m.titulo_pt || m.descricao)}</p>` : ''}
+    ${n.erro ? `<p class="alerta">O cabeçalho desta nota tem um erro de formatação (${esc(n.erro)}). Use Editar para corrigir.</p>` : ''}
+    ${m.revisado === false ? `<div class="revbar"><span>Criada pelo Claude a partir do inbox${m.criado ? ' em ' + esc(m.criado) : ''}.</span><button type="button" data-acao="revisar">Marcar como revisada</button></div>` : ''}
+    <div class="acoes"><a class="ghost" href="#/editar/${enc(n.path)}">Editar</a>${seguro(m.fonte) ? `<a class="ghost" href="${esc(seguro(m.fonte))}" target="_blank" rel="noopener noreferrer">Abrir fonte</a>` : ''}</div>
+    ${campos.length ? `<div class="fields">${campos.map(([rot, v, href]) => `<div class="f"><span>${esc(rot)}</span>${seguro(href) ? `<a href="${esc(seguro(href))}" target="_blank" rel="noopener noreferrer">${esc(v)}</a>` : `<b>${esc(v)}</b>`}</div>`).join('')}</div>` : ''}
+    ${m.tipo === 'ferramenta' ? `<div class="status" role="group" aria-label="Status">${STATUS_FERR.map(([v, rot]) => `<button type="button" data-acao="status" data-v="${v}" aria-pressed="${m.status === v}">${rot}</button>`).join('')}</div>` : ''}
+    ${m.tipo !== 'projeto' ? `<div class="tagrow">
+      ${['foco', 'abordagem'].flatMap((k) => asList(m[k])).map((v) => `<span class="tg sub">${esc(v)}</span>`).join('')}
+      ${asList(m.tags).map((t) => `<span class="tg">${esc(t)}<button type="button" data-acao="rm-tag" data-v="${esc(t)}" aria-label="Remover tag ${esc(t)}">×</button></span>`).join('')}
+      ${asList(m.projetos).map((p) => `<a class="tg proj" href="#/n/${enc(`${PASTAS.projeto}/${p}.md`)}">${esc(nomeProjeto(p))}</a>`).join('')}
+      <button type="button" class="tg add" data-acao="add-tag">+ tag</button>
+      <button type="button" class="tg add" data-acao="add-proj">+ projeto</button>
+    </div>` : ''}
+    <div class="corpo">${corpoSeguro(n.body)}</div>
+    ${refs.length ? `<div class="citada"><h2>${m.tipo === 'projeto' ? 'Referências deste projeto' : 'Citada em'}</h2>${refs.map((r) => `<a href="#/n/${enc(r.path)}">${esc(r.meta.titulo || r.slug)}</a>`).join('')}</div>` : ''}`;
+  $('#leitor').dataset.path = n.path;
+}
+
+function verVazio() {
+  $('#leitor').innerHTML = `<p class="vazio">Escolha uma nota na lista.</p>`;
+}
+
+async function verAjustes() {
+  const c = getConfig() || { owner: 'ahrawis', repo: 'knowledge-vault', token: '' };
+  const fila = await tamanhoFila().catch(() => 0);
+  $('#leitor').innerHTML = `
+    <form class="painel" id="f-ajustes">
+      <h1>Ajustes</h1>
+      <p class="hint">O app lê e grava as notas no seu repositório privado do GitHub. O token fica guardado só neste aparelho.</p>
+      <label>Dono do repositório<input name="owner" required autocomplete="off" value="${esc(c.owner)}"></label>
+      <label>Nome do repositório<input name="repo" required autocomplete="off" value="${esc(c.repo)}"></label>
+      <label>Token de acesso (fine-grained, só este repositório, permissão Contents: Read and write)<input name="token" type="password" required autocomplete="off" value="${esc(c.token)}"></label>
+      <div class="acoes"><button class="btn">Salvar e sincronizar</button></div>
+      ${fila ? `<p class="hint">${fila} captura(s) guardada(s) neste aparelho aguardando envio.</p>` : ''}
+      <hr style="border:0;border-top:1px solid var(--line);width:100%">
+      <div class="acoes">
+        <button type="button" class="ghost" data-acao="demo">Abrir exemplo sem GitHub</button>
+        <button type="button" class="ghost" data-acao="esquecer">Apagar dados deste aparelho</button>
+      </div>
+    </form>`;
+}
+
+function verInbox() {
+  const linha = (n) => `
+    <div class="cap-item${n.meta.falha ? ' falhou' : ''}">
+      <p><b>${seguro(n.meta.url) ? `<a href="${esc(seguro(n.meta.url))}" target="_blank" rel="noopener noreferrer">${esc(n.meta.url)}</a>` : esc(n.meta.url || 'Texto sem link')}</b></p>
+      ${n.body.trim() ? `<p>${esc(n.body.trim())}</p>` : ''}
+      <p class="hint">${esc(n.meta.origem || '')} ${esc(String(n.meta.criado || '').slice(0, 16).replace('T', ' '))}</p>
+      ${n.meta.falha ? `<p><b>Não processada:</b> ${esc(n.meta.falha)}</p>
+        <div class="acoes"><button type="button" class="ghost" data-acao="retentar" data-v="${esc(n.path)}">Tentar de novo</button>
+        <button type="button" class="ghost" data-acao="descartar" data-v="${esc(n.path)}">Descartar</button></div>` : ''}
+    </div>`;
+  const pend = inbox.filter((n) => !n.meta.falha);
+  const falhas = inbox.filter((n) => n.meta.falha);
+  $('#leitor').innerHTML = `<h1>Inbox</h1>
+    <p class="hint" style="margin-bottom:16px">Capturas aguardando o Claude no PC.</p>
+    ${pend.map(linha).join('') || '<p class="vazio" style="padding-left:0">Nada pendente.</p>'}
+    ${falhas.length ? `<h2 style="font-size:16px;margin-top:24px">Com problema</h2>${falhas.map(linha).join('')}` : ''}`;
+}
+
+// ---------- roteamento ----------
+function route() {
+  const h = location.hash || '#/';
+  const [, rota = '', ...resto] = h.split('/');
+  const arg = decodeURIComponent(resto.join('/'));
+  let vista = 'leitor';
+  let atual = null;
+  if (rota === 'n' && porPath(arg)) { atual = arg; verNota(porPath(arg)); }
+  else if (rota === 'editar' && porPath(arg)) { atual = arg; verEditor(porPath(arg)); }
+  else if (rota === 'nova') verNova();
+  else if (rota === 'capturar') verCaptura();
+  else if (rota === 'inbox') verInbox();
+  else if (rota === 'ajustes') verAjustes();
+  else if (rota === 'navegar') { vista = 'nav'; verVazio(); }
+  else { vista = 'lista'; verVazio(); }
+  document.body.dataset.vista = vista;
+  document.querySelectorAll('.tabbar a[data-tab]').forEach((a) => a.classList.toggle('cur', a.dataset.tab === (rota === 'inbox' ? 'inbox' : vista)));
+  renderLista(atual);
+  if (vista === 'leitor') $('#leitor').scrollTop = 0;
+}
+function render() { renderNav(); renderFacets(); route(); }
+
+// ---------- eventos ----------
+document.addEventListener('click', async (ev) => {
+  const nav = ev.target.closest('.nav-i[data-k]');
+  if (nav) {
+    const { k, v } = nav.dataset;
+    Object.assign(F, { tipo: '', area: '', projeto: '', revisao: '', campos: {} });
+    if (k !== 'tudo') F[k] = v;
+    renderNav(); renderFacets();
+    if (k === 'projeto') location.hash = `#/n/${enc(`${PASTAS.projeto}/${v}.md`)}`;
+    else if (matchMedia('(max-width: 800px)').matches) location.hash = '#/';
+    else renderLista($('#leitor').dataset.path);
+    return;
+  }
+  const b = ev.target.closest('[data-acao]');
+  if (!b) return;
+  const n = porPath($('#leitor').dataset.path || '');
+  const acao = b.dataset.acao;
+  if (acao === 'limpar') { Object.assign(F, { q: '', tipo: '', area: '', projeto: '', revisao: '', campos: {} }); $('#busca').value = ''; render(); }
+  else if (acao === 'demo') await abrirDemo();
+  else if (acao === 'esquecer') {
+    if (!confirm('Apagar token, notas em cache e capturas não enviadas deste aparelho? As notas no GitHub não são afetadas.')) return;
+    await esquecerTudo(); cache = {}; demo = false; rebuild(); render(); aviso('Dados deste aparelho apagados.');
+  }
+  else await acaoNota(acao, b, n);
+});
+
+document.addEventListener('change', (ev) => {
+  const s = ev.target.closest('#facets select');
+  if (!s) return;
+  const k = s.dataset.k;
+  if (k.startsWith('campo:')) F.campos[k.slice(6)] = s.value;
+  else { F[k] = s.value; if (k === 'tipo') F.campos = {}; }
+  renderNav(); renderFacets(); renderLista($('#leitor').dataset.path);
+});
+
+let buscaT;
+$('#busca').addEventListener('input', (ev) => {
+  clearTimeout(buscaT);
+  buscaT = setTimeout(() => {
+    F.q = ev.target.value;
+    if (matchMedia('(max-width: 800px)').matches && location.hash !== '#/') location.hash = '#/';
+    renderFacets(); renderLista($('#leitor').dataset.path);
+  }, 120);
+});
+
+document.addEventListener('submit', async (ev) => {
+  const f = ev.target;
+  if (f.id === 'f-ajustes') {
+    ev.preventDefault();
+    const d = Object.fromEntries(new FormData(f));
+    setConfig({ owner: d.owner.trim(), repo: d.repo.trim(), token: d.token.trim() });
+    try { await testarConexao(); } catch (e) { aviso(e.message, true); return; }
+    demo = false; $('#demo-bar').hidden = true; cache = await carregarCache(); rebuild();
+    await sincronizarAgora();
+    location.hash = '#/';
+  } else await submeter(ev);
+});
+
+window.addEventListener('hashchange', route);
+$('#sync').addEventListener('click', () => sincronizarAgora());
+
+async function sincronizarAgora() {
+  if (demo || !getConfig()) return;
+  const bt = $('#sync');
+  bt.disabled = true;
+  try {
+    cache = await sincronizar((a, t) => { bt.textContent = `Sincronizando ${a}/${t}`; });
+    rebuild(); render();
+  } catch (e) { aviso(e.status === undefined ? 'Sem conexão: mostrando as notas guardadas neste aparelho.' : e.message, e.status !== undefined); }
+  finally { bt.disabled = false; bt.textContent = 'Sincronizar'; }
+}
+
+async function abrirDemo() {
+  cache = await (await fetch('demo.json')).json();
+  demo = true; $('#demo-bar').hidden = false;
+  rebuild(); render(); location.hash = '#/';
+}
+
+// Ganchos preenchidos na Task 8 (edição, captura, ações na nota).
+async function acaoNota(acao, botao, n) {}
+async function submeter(ev) {}
+function verEditor(n) { verNota(n); }
+function verNova() { verVazio(); }
+function verCaptura() { verVazio(); }
+
+// ---------- início ----------
+async function iniciar() {
+  const q = new URLSearchParams(location.search);
+  if (q.has('text') || q.has('url') || q.has('title')) {
+    compartilhado = { texto: [q.get('url'), q.get('title'), q.get('text')].filter(Boolean).join('\n') };
+    history.replaceState(null, '', location.pathname + '#/capturar');
+  }
+  cache = await carregarCache().catch(() => ({}));
+  rebuild(); render();
+  if (!getConfig()) { if (!location.hash.startsWith('#/capturar')) location.hash = '#/ajustes'; return; }
+  sincronizarAgora();
+  enviarFila().then((n) => n && aviso(`${n} captura(s) guardada(s) foram enviadas.`)).catch(() => {});
+}
+window.addEventListener('online', () => enviarFila().then((n) => n && aviso(`${n} captura(s) guardada(s) foram enviadas.`)));
+iniciar();
+</script>
+</body>
+</html>
