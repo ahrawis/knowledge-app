@@ -460,12 +460,131 @@ async function abrirDemo() {
   rebuild(); render(); location.hash = '#/';
 }
 
-// Ganchos preenchidos na Task 8 (edição, captura, ações na nota).
-async function acaoNota(acao, botao, n) {}
-async function submeter(ev) {}
-function verEditor(n) { verNota(n); }
-function verNova() { verVazio(); }
-function verCaptura() { verVazio(); }
+// ---------- edição e ações ----------
+async function alterarMeta(n, fn, msg) {
+  if (n.erro) { aviso('Corrija o cabeçalho em Editar antes.', true); return; }
+  const meta = structuredClone(n.meta);
+  fn(meta);
+  await gravar(n.path, serializeNote(meta, n.body), msg);
+}
+
+async function acaoNota(acao, botao, n) {
+  const v = botao.dataset.v;
+  if (acao === 'preview') {
+    const prev = $('#prev');
+    const p = parseNote('x.md', $('#texto').value);
+    prev.hidden = !prev.hidden;
+    $('#texto').hidden = !prev.hidden;
+    botao.textContent = prev.hidden ? 'Pré-visualizar' : 'Voltar a editar';
+    if (!prev.hidden) prev.innerHTML = corpoSeguro(p.body);
+    return;
+  }
+  if (acao === 'retentar' || acao === 'descartar') {
+    const c = porPath(v);
+    if (acao === 'retentar') {
+      const meta = { ...c.meta }; delete meta.falha; delete meta.falha_em;
+      await gravar(c.path, serializeNote(meta, c.body), `inbox: tentar de novo ${c.path}`);
+    } else if (confirm('Descartar esta captura? Ela some do inbox (fica no histórico do GitHub).')) {
+      if (demo) { delete cache[c.path]; rebuild(); render(); return; }
+      try { await remover(c.path, cache[c.path].sha, `inbox: descartar ${c.path}`); delete cache[c.path]; rebuild(); render(); aviso('Captura descartada.'); }
+      catch (e) { aviso(e.message, true); }
+    }
+    return;
+  }
+  if (!n) return;
+  if (acao === 'revisar') await alterarMeta(n, (m) => { m.revisado = true; }, `revisar: ${n.path}`);
+  else if (acao === 'status') await alterarMeta(n, (m) => { m.status = v; }, `status ${v}: ${n.path}`);
+  else if (acao === 'rm-tag') await alterarMeta(n, (m) => { m.tags = asList(m.tags).filter((t) => t !== v); }, `tags: ${n.path}`);
+  else if (acao === 'add-tag') {
+    const t = (prompt('Nova tag (minúsculas, em português):') || '').trim().toLowerCase();
+    if (t && !asList(n.meta.tags).includes(t)) await alterarMeta(n, (m) => { m.tags = [...asList(m.tags), t]; }, `tags: ${n.path}`);
+  } else if (acao === 'add-proj') {
+    const lista = projetos().map((p) => p.slug).join(', ');
+    const p = (prompt(`Projeto (slug). Existentes: ${lista || 'nenhum'}`) || '').trim().toLowerCase();
+    if (!p) return;
+    if (!projetos().some((x) => x.slug === p)) {
+      const meta = { tipo: 'projeto', titulo: p.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase()), status: 'ativo', criado: new Date().toISOString().slice(0, 10) };
+      if (!(await gravar(`${PASTAS.projeto}/${p}.md`, serializeNote(meta, '\n## Objetivo\nA definir.\n'), `projeto: ${p}`))) return;
+    }
+    if (!asList(n.meta.projetos).includes(p)) await alterarMeta(porPath(n.path), (m) => { m.projetos = [...asList(m.projetos), p]; }, `projetos: ${n.path}`);
+  }
+}
+
+function verEditor(n) {
+  $('#leitor').innerHTML = `
+    <form id="f-editor" class="editor">
+      <div class="ed-top">
+        <h1>${esc(n.meta.titulo || n.slug)}</h1>
+        <div class="acoes" style="margin:0">
+          <button type="button" class="ghost" data-acao="preview">Pré-visualizar</button>
+          <a class="ghost" href="#/n/${enc(n.path)}">Cancelar</a>
+          <button class="btn">Salvar</button>
+        </div>
+      </div>
+      <p class="hint" style="margin-bottom:8px">O bloco entre as linhas --- é o cabeçalho (título, tags, campos). O texto da nota vem depois. Links para outras notas: [[Título da nota]].</p>
+      <textarea id="texto" spellcheck="true" aria-label="Texto da nota">${esc(cache[n.path].text)}</textarea>
+      <div id="prev" class="corpo" hidden></div>
+    </form>`;
+  $('#leitor').dataset.path = n.path;
+}
+
+function verNova() {
+  $('#leitor').innerHTML = `
+    <form id="f-nova" class="painel">
+      <h1>Nova nota</h1>
+      <label>Título<input name="titulo" required autocomplete="off"></label>
+      <label>Área<select name="area">${areas().map((a) => `<option>${esc(a)}</option>`).join('')}</select></label>
+      <div class="acoes"><button class="btn">Criar e editar</button></div>
+    </form>`;
+  $('#leitor').dataset.path = '';
+}
+
+function verCaptura() {
+  const pre = compartilhado?.texto || '';
+  compartilhado = null;
+  const projs = projetos().map((p) => '@' + p.slug).join(', ');
+  $('#leitor').innerHTML = `
+    <form id="f-captura" class="painel">
+      <h1>Salvar no inbox</h1>
+      <label>Link e observação<textarea id="c-texto" name="texto" rows="5" placeholder="Cole o link. Escreva @projeto para vincular a um projeto.">${esc(pre)}</textarea></label>
+      ${projs ? `<p class="hint">Projetos: ${esc(projs)}</p>` : ''}
+      <fieldset><legend>Tipo (opcional, o Claude detecta)</legend>
+        ${[['auto', 'Detectar'], ['ferramenta', 'Ferramenta'], ['artigo', 'Artigo'], ['web', 'Web ou vídeo'], ['nota', 'Nota']]
+          .map(([v, r], i) => `<label class="pilula"><input type="radio" name="tipo" value="${v}"${i ? '' : ' checked'}><span>${r}</span></label>`).join('')}
+      </fieldset>
+      <div class="acoes"><button class="btn" style="padding:12px 18px">Enviar para o inbox</button></div>
+      <p class="hint">Processado no PC na próxima rodada.</p>
+    </form>`;
+  $('#leitor').dataset.path = '';
+  $('#c-texto').focus();
+}
+
+async function submeter(ev) {
+  const f = ev.target;
+  ev.preventDefault();
+  if (f.id === 'f-editor') {
+    const path = $('#leitor').dataset.path;
+    const texto = $('#texto').value;
+    const p = parseNote(path, texto);
+    if (p.erro) { aviso(`Cabeçalho com erro de formatação: ${p.erro}`, true); return; }
+    if (await gravar(path, texto, `editar: ${path}`)) location.hash = `#/n/${enc(path)}`;
+  } else if (f.id === 'f-nova') {
+    const d = Object.fromEntries(new FormData(f));
+    const r = newNote(d.titulo.trim(), new Set(Object.keys(cache)), d.area);
+    if (await gravar(r.path, r.content, `nota: ${d.titulo.trim()}`)) location.hash = `#/editar/${enc(r.path)}`;
+  } else if (f.id === 'f-captura') {
+    const d = Object.fromEntries(new FormData(f));
+    if (!d.texto.trim()) { aviso('Cole um link ou escreva um texto.', true); return; }
+    const arq = captureFile({ texto: d.texto, tipo: d.tipo, origem: matchMedia('(max-width: 800px)').matches ? 'celular' : 'pc' });
+    if (demo) { cache[arq.path] = { sha: 'demo', text: arq.content }; rebuild(); renderNav(); aviso('Modo exemplo: captura só nesta tela.'); f.reset(); return; }
+    try {
+      const r = await capturar(arq);
+      if (r.estado === 'enviado') { cache[arq.path] = { sha: r.sha, text: arq.content }; aviso('Enviado para o inbox.'); }
+      else aviso('Sem conexão: guardado neste aparelho e enviado quando voltar a internet.');
+      rebuild(); renderNav(); f.reset();
+    } catch (e) { aviso(e.message, true); }
+  }
+}
 
 // ---------- início ----------
 async function iniciar() {
