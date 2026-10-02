@@ -600,6 +600,7 @@ async function iniciar() {
   enviarFila().then((n) => n && aviso(`${n} captura(s) guardada(s) foram enviadas.`)).catch(() => {});
 }
 window.addEventListener('online', () => enviarFila().then((n) => n && aviso(`${n} captura(s) guardada(s) foram enviadas.`)));
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 iniciar();
 </script>
 </body>
