@@ -213,10 +213,10 @@ function aviso(msg, erro = false) {
   avisoT = setTimeout(() => { el.textContent = ''; }, erro ? 7000 : 3500);
 }
 
-async function gravar(path, text, msg) {
+async function gravar(path, text, msg, base = cache[path]?.sha) {
   if (demo) { cache[path] = { sha: 'demo', text }; rebuild(); render(); aviso('Modo exemplo: alteração só nesta tela.'); return true; }
   try {
-    const sha = await salvar(path, text, cache[path]?.sha, msg);
+    const sha = await salvar(path, text, base, msg);
     cache[path] = { sha, text };
     rebuild(); render(); aviso('Salvo.');
     return true;
@@ -371,14 +371,17 @@ function route() {
   const arg = decodeURIComponent(resto.join('/'));
   let vista = 'leitor';
   let atual = null;
+  // Formulário aberto na mesma rota não é redesenhado: a sincronização em segundo plano apagaria o que foi digitado.
+  const manter = $('#leitor').dataset.rota === h && !!$('#leitor').querySelector('form');
   if (rota === 'n' && porPath(arg)) { atual = arg; verNota(porPath(arg)); }
-  else if (rota === 'editar' && porPath(arg)) { atual = arg; verEditor(porPath(arg)); }
-  else if (rota === 'nova') verNova();
-  else if (rota === 'capturar') verCaptura();
+  else if (rota === 'editar' && porPath(arg)) { atual = arg; if (!manter) verEditor(porPath(arg)); }
+  else if (rota === 'nova') { if (!manter) verNova(); }
+  else if (rota === 'capturar') { if (!manter) verCaptura(); }
   else if (rota === 'inbox') verInbox();
-  else if (rota === 'ajustes') verAjustes();
+  else if (rota === 'ajustes') { if (!manter) verAjustes(); }
   else if (rota === 'navegar') { vista = 'nav'; verVazio(); }
   else { vista = 'lista'; verVazio(); }
+  $('#leitor').dataset.rota = h;
   document.body.dataset.vista = vista;
   document.querySelectorAll('.tabbar a[data-tab]').forEach((a) => a.classList.toggle('cur', a.dataset.tab === (rota === 'inbox' ? 'inbox' : vista)));
   renderLista(atual);
@@ -516,7 +519,7 @@ async function acaoNota(acao, botao, n) {
 
 function verEditor(n) {
   $('#leitor').innerHTML = `
-    <form id="f-editor" class="editor">
+    <form id="f-editor" class="editor" data-sha="${esc(cache[n.path].sha)}">
       <div class="ed-top">
         <h1>${esc(n.meta.titulo || n.slug)}</h1>
         <div class="acoes" style="margin:0">
@@ -571,7 +574,7 @@ async function submeter(ev) {
     const texto = $('#texto').value;
     const p = parseNote(path, texto);
     if (p.erro) { aviso(`Cabeçalho com erro de formatação: ${p.erro}`, true); return; }
-    if (await gravar(path, texto, `editar: ${path}`)) location.hash = `#/n/${enc(path)}`;
+    if (await gravar(path, texto, `editar: ${path}`, f.dataset.sha)) location.hash = `#/n/${enc(path)}`;
   } else if (f.id === 'f-nova') {
     const d = Object.fromEntries(new FormData(f));
     const r = newNote(d.titulo.trim(), new Set(Object.keys(cache)), d.area);
