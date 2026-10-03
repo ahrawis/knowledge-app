@@ -114,9 +114,13 @@
   .tabbar { display:none; }
 
   @media (max-width: 800px) {
-    #app { grid-template-columns:1fr; grid-template-rows:auto auto minmax(0,1fr) auto; }
+    #app { grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto minmax(0,1fr) auto; }
+    #app > * { min-width:0; }
     .top { padding:8px 12px; gap:8px; }
-    .logo { width:auto; }
+    .logo { width:auto; flex:none; }
+    #sync { font-size:0; padding:6px 11px; }
+    #sync::before { content:"↻"; font-size:18px; line-height:1; }
+    .demo-bar { top:auto; bottom:64px; border-radius:8px; width:max-content; max-width:92vw; text-align:center; }
     .top a.ghost, .top .btn { display:none; }
     #nav, #facets, #lista, #leitor { grid-column:1; grid-row:3; border-right:0; }
     #facets { grid-row:2; overflow-x:auto; flex-wrap:nowrap; }
@@ -142,7 +146,7 @@
   <header class="top">
     <a class="logo" href="#/">Knowledge</a>
     <input id="busca" type="search" placeholder="Buscar título, autor, tag, DOI…" aria-label="Buscar nas notas" autocomplete="off">
-    <button id="sync" class="ghost" type="button">Sincronizar</button>
+    <button id="sync" class="ghost" type="button" aria-label="Sincronizar">Sincronizar</button>
     <a class="ghost" href="#/nova">Nova nota</a>
     <a class="btn" href="#/capturar">Capturar link</a>
   </header>
